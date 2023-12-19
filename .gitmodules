@@ -1,0 +1,9 @@
+[submodule "dyn_opt"]
+	path = dyn_opt
+	url = git@github.com:AlgoGators/dyn_opt.git
+[submodule "trend-following"]
+	path = trend-following
+	url = git@github.com:AlgoGators/trend-following.git
+[submodule "Carry"]
+	path = Carry
+	url = git@github.com:AlgoGators/Carry.git
