@@ -1,4 +1,17 @@
+
 # AlgoGators System
+## Installation
+Begin installation of the total system by running:
+```
+git clone https://github.com/AlgoGators/algo_system.git --recurse
+```
+OR
+```
+git clone https://github.com/AlgoGators/algo_system.git
+cd algo_system
+git submodule update --init --recurse
+```
+
 Incorporating the dynamic optimization with trend and carry signals to generate position sizes
 ## Design
 
