@@ -7,3 +7,6 @@
 [submodule "dyn_opt"]
 	path = dyn_opt
 	url = https://github.com/AlgoGators/dyn_opt.git
+[submodule "risk_analysis"]
+	path = risk_analysis
+	url = https://github.com/AlgoGators/risk_analysis.git
