@@ -6,6 +6,25 @@ from dyn_opt import *
 
 
 """
+Proposed folder repo structure
+
+algo_system
+┝ Carry
+┝ dyn_opt
+┝ risk_analysis
+┝ trend_following
+┝ unittesting
+│   ┝ data
+│   │   ┝ ES.csv
+│   │   ┕ ..
+│   ┕ unittesting.py
+┝ main.py (steps 1-8)
+┝ get_instruments.py (step 1)
+┝ get_trend_positions.py (step 2)
+┝ get_carry_positions.py (step 3)
+┝ get_optimized_positions.py (step 5)
+┕ get_risk_adjusted_positions.py (step 6, 7 & 8)
+
 Outline
 
 1. Calculate list of instruments volatile enough to be traded (I)
