@@ -12,6 +12,20 @@ cd algo_system
 git submodule update --init --recurse
 ```
 
+## Updating a submodule
+```
+git submodule update --remote <moduleName>
+git add <moduleName>
+git commit -m "your message"
+git push
+(follow the login instructions)
+```
+OR
+```
+git submodule update --remote <moduleName>
+(and use the Desktop GUI to commit as normal)
+```
+
 Incorporating the dynamic optimization with trend and carry signals to generate position sizes
 ## Design
 
