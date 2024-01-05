@@ -45,28 +45,23 @@ Outline
         Returns True/False if instrument is volatile enough to be traded or not, respectively
 
 2. Calculate positions as a result of trend following (Nᵀ)
-    Using the list of instruments from step 1, generate positions using multitrend.py and return a dictionary of positions
+    Using the list of instruments from step 1, generate positions using multitrend.py and return a dictionary of positions using the function trend_forecast() from trend_following/multitrend.py
         Arguments:
             instruments : list[str] e.g. ['ES', 'ZF']
                 list of instruments to generate positions for
-            returns_df : pandas.DataFrame (% returns)
-                e.g. 
-                Date        ES      ZF
-                2019-01-01  0.01    0.02
-                2019-01-02  0.02    -0.01
-                2019-01-03  0.01    0.01
+            weights : list[float] e.g. [0.5, 0.5]
+                weights for each instrument
+            capital : int
+                trading capital
+            risk_target_tau : float
+                risk target e.g. 0.20
+            multipliers : dict e.g. {'ES' : 1.0, 'ZF' : 1.0}
+                multipliers for each instrument
+            fast_spans : list[int] e.g. [20, 50]
+                fast spans for each instrument
 
-                Likely that each instrument will have different dates so an inner merge of daily returns on date is needed
-            risk_target : float
-                simply just 0.20 unless we want to use a different risk target
-            capital : float
-                total trading capital we have access to (not the 50MM 'jumbo portfolio')
-            costs_per_contract : dict {'ES' : 0.008, 'ZF' : 10.75}
-                estimate of the costs per contract for each instrument
-                this needs to be updated occasionally based on current conditions (monthly?)
-                    no clue if this has been done or if it needs to be done
+        Returns a tuple of two dictionaries, one for the buffered positions and one for the unbuffered positions
 
-        Returns a dictionary of positions e.g. {'ES' : 1, 'ZF' : 3}
 
 3. Calculate positions as a result of carry (Nꟲ)
 
