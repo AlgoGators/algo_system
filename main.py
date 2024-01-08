@@ -25,6 +25,8 @@ algo_system
 ┝ get_optimized_positions.py (step 5)
 ┕ get_risk_adjusted_positions.py (step 6, 7 & 8)
 
+steps 6 & 7 should append to a CSV if any risk limits are hit and whether it was portfolio wide or position only and what type of limit was hit (forecast, leverage, open interest)
+
 Outline
 
 1. Calculate list of instruments volatile enough to be traded (I)
