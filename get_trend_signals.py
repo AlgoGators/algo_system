@@ -5,9 +5,9 @@ from trend_following import multitrend
 2. Calculate positions as a result of trend following (Nᵀ)
     Using the list of instruments from step 1, generate positions using multitrend.py and return a dictionary of positions using the function trend_forecast() from trend_following/multitrend.py
         Arguments:
-            instruments : list[str] e.g. ['ES', 'ZF']
+            instr_list : list[str] e.g. ['ES', 'ZF']
                 list of instruments to generate positions for
-            weights : list[float] e.g. [0.5, 0.5]
+            weights : dict e.g. [ES=0.5, US=0.5]
                 weights for each instrument
             capital : int
                 trading capital
