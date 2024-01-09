@@ -7,6 +7,7 @@ import unittest
 import pandas as pd
 from get_instruments import get_instruments
 from get_optimized_positions import get_optimized_positions
+from get_risk_adjusted_positions import get_risk_adjusted_positions
 
 class TestGetInstruments(unittest.TestCase):
     def setUp(self):
@@ -41,6 +42,46 @@ class TestGetOptimizedPositions(unittest.TestCase):
 
         expected_result = {'ES' : 1, 'ZF' : 0, 'ZN' : 0}
         self.assertEqual(optimized_positions, expected_result)
+
+class TestGetRiskAdjustedPositions(unittest.TestCase):
+    def setUp(self):
+        self.returns_df = pd.read_csv('unittesting/data/fictional_returns_TEST2.csv', index_col=0)
+
+    def test_get_risk_adjusted_positions(self):
+        positions = {'ES' : 1, 'ZF' : 1, 'ZN' : 2}
+        notional_exposure_per_contract = {'ES' : 50000, 'ZF' : 100000, 'ZN' : 100000}
+        capital = 500000
+        risk_target = 0.20
+        IDM = 2.50
+        average_forecast = 10
+        open_interest_dct = {'ES' : 100000, 'ZF' : 50000, 'ZN' : 50000}
+        standard_deviation_dct = {'ES' : 0.01, 'ZF' : 0.005, 'ZN' : 0.005}
+        instrument_weights_dct = {'ES' : 0.33, 'ZF' : 0.33, 'ZN' : 0.33}
+        max_forecast = 20
+        max_leverage_ratio = 2.0
+        max_forecast_margin = 0.5
+        max_pct_of_open_interest = 0.01
+        instrument_returns_df = self.returns_df
+
+        risk_adjusted_positions = get_risk_adjusted_positions(
+            positions=positions,
+            notional_exposure_per_contract=notional_exposure_per_contract,
+            capital=capital,
+            risk_target=risk_target,
+            IDM=IDM,
+            average_forecast=average_forecast,
+            open_interest_dct=open_interest_dct,
+            standard_deviation_dct=standard_deviation_dct,
+            instrument_weights_dct=instrument_weights_dct,
+            max_forecast=max_forecast,
+            max_leverage_ratio=max_leverage_ratio,
+            max_forecast_margin=max_forecast_margin,
+            max_pct_of_open_interest=max_pct_of_open_interest,
+            instrument_returns_df=instrument_returns_df
+        )
+
+        expected_result = {'ES' : 1, 'ZF' : 1, 'ZN' : 2}
+        self.assertEqual(risk_adjusted_positions, expected_result)
 
 if __name__ == '__main__':
     unittest.main(failfast=True)
