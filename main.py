@@ -5,6 +5,7 @@ from get_trend_signals import get_trend_positions
 from get_optimized_positions import get_optimized_positions
 from get_risk_adjusted_positions import get_risk_adjusted_positions
 from get_buffered_positions import get_buffered_positions
+from get_notional_exposures import get_notional_exposures
 
 def main():
     #!! NEED to source this
@@ -15,19 +16,23 @@ def main():
     instrument_weight = 1 / len(all_instruments)
 
     #!! NEED to calculate the following:
-    multipliers = {}
+    multipliers = {} #? SQL pull for this
 
-    held_positions = {}
+    held_positions = {} #? SQL pull for this
 
-    notional_exposure_per_contract = {}
+    most_recent_prices = {}
+
+    notional_exposure_per_contract = get_notional_exposures(most_recent_prices, multipliers)
     
-    costs_per_contract = {}
+    costs_per_contract = {} #? SQL pull for this
 
-    open_interest_dct = {}
+    open_interest_dct = {} #? SQL pull for this
 
-    standard_deviation_dct = {}
+    standard_deviation_dct = {} #? function for this
 
-    instrument_weights_dct = {}
+    instrument_weights_dct = {} 
+    for instrument in instruments:
+        instrument_weights_dct[instrument] = instrument_weight
 
     instruments = get_instruments(
         instruments=all_instruments,
@@ -40,12 +45,12 @@ def main():
     #? doesnt need past returns?
     trend_positions = get_trend_positions(
         instruments=instruments,
-        weights={},#? reason not to make it equal (1/len(instruments))?
+        weights=instrument_weights_dct,
         capital=CAPITAL,
         #!! IDM=IDM
         risk_target_tau=RISK_TARGET,
         multipliers=multipliers,
-        fast_spans=FAST_SPANS)#? values?
+        fast_spans=FAST_SPANS)
 
     #!! NEED to calculate carry_positions: 
     carry_positions = {}
