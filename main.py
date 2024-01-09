@@ -1,9 +1,97 @@
-from trend_following import *
-from Carry import *
-from dyn_opt import *
+import pandas as pd
+from config import *
+from get_instruments import get_instruments
+from get_trend_signals import get_trend_positions
+from get_optimized_positions import get_optimized_positions
+from get_risk_adjusted_positions import get_risk_adjusted_positions
+from get_buffered_positions import get_buffered_positions
 
-# 
+def main():
+    #!! NEED to source this
+    all_instruments = []
 
+    instrument_returns_df = pd.DataFrame()
+
+    instrument_weight = 1 / len(all_instruments)
+
+    #!! NEED to calculate the following:
+    multipliers = {}
+
+    held_positions = {}
+
+    notional_exposure_per_contract = {}
+    
+    costs_per_contract = {}
+
+    open_interest_dct = {}
+
+    standard_deviation_dct = {}
+
+    instrument_weights_dct = {}
+
+    instruments = get_instruments(
+        instruments=all_instruments,
+        instrument_weight=instrument_weight,
+        IDM=IDM,
+        risk_target=RISK_TARGET,
+        instrument_returns_df=instrument_returns_df,
+        maximum_leverage=MAXIMUM_LEVERAGE)
+    
+    #? doesnt need past returns?
+    trend_positions = get_trend_positions(
+        instruments=instruments,
+        weights={},#? reason not to make it equal (1/len(instruments))?
+        capital=CAPITAL,
+        #!! IDM=IDM
+        risk_target_tau=RISK_TARGET,
+        multipliers=multipliers,
+        fast_spans=FAST_SPANS)#? values?
+
+    #!! NEED to calculate carry_positions: 
+    carry_positions = {}
+
+    total_positions = {}
+
+    for instrument in instruments:
+        total_positions[instrument] = trend_positions[instrument] + carry_positions[instrument]
+
+    optimized_positions = get_optimized_positions(
+        held_positions=held_positions,
+        ideal_positions=total_positions,
+        notional_exposures_per_contract=notional_exposure_per_contract,
+        capital=CAPITAL,
+        costs_per_contract=costs_per_contract,
+        returns_df=instrument_returns_df,
+        risk_target=RISK_TARGET)
+    
+    risk_adjusted_positions = get_risk_adjusted_positions(
+        positions=optimized_positions,
+        notional_exposure_per_contract=notional_exposure_per_contract,
+        capital=CAPITAL,
+        risk_target=RISK_TARGET,
+        IDM=IDM,
+        average_forecast=AVERAGE_FORECAST,
+        open_interest_dct=open_interest_dct,
+        standard_deviation_dct=standard_deviation_dct,
+        instrument_weights_dct=instrument_weights_dct,
+        max_forecast=MAX_FORECAST,
+        max_position_leverage_ratio=MAX_POSITION_LEVERAGE_RATIO,
+        max_forecast_margin=MAX_FORECAST_MARGIN,
+        max_pct_of_open_interest=MAX_PCT_OF_OPEN_INTEREST,
+        instrument_returns_df=instrument_returns_df,
+        max_portfolio_leverage=MAXIMUM_PORTFOLIO_LEVERAGE)
+    
+    buffered_positions = get_buffered_positions(
+        positions=risk_adjusted_positions,
+        held_positions=held_positions,
+        buffer_fraction=BUFFER_FRACTION)
+    
+    #? what to do with buffered positions?
+    
+
+
+if __name__ == '__main__':
+    main()
 
 """
 Proposed folder repo structure
