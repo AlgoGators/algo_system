@@ -5,7 +5,8 @@ def get_portfolio_risk_multiplier(
     instruments : list,
     notional_exposure_per_contract : dict,
     capital : float,
-    instrument_returns_df : pd.DataFrame) -> float:
+    instrument_returns_df : pd.DataFrame,
+    max_portfolio_leverage : int) -> float:
 
     position_weights = {}
 
@@ -16,7 +17,8 @@ def get_portfolio_risk_multiplier(
 
     return risk_functions.RiskOverlay().final_risk_multiplier(
         position_weights=position_weights,
-        position_percent_returns=instrument_returns_df)
+        position_percent_returns=instrument_returns_df,
+        max_portfolio_leverage=max_portfolio_leverage)
 
 def get_risk_limited_position(
     number_of_contracts : float,
@@ -70,10 +72,11 @@ def get_risk_adjusted_positions(
     standard_deviation_dct : dict,
     instrument_weights_dct : dict,
     max_forecast : int,
-    max_leverage_ratio : int,
+    max_position_leverage_ratio : int,
     max_forecast_margin : float,
     max_pct_of_open_interest : float,
-    instrument_returns_df : pd.DataFrame) -> dict:
+    instrument_returns_df : pd.DataFrame,
+    max_portfolio_leverage : int) -> dict:
 
     instruments = list(positions.keys())
 
@@ -81,7 +84,8 @@ def get_risk_adjusted_positions(
         instruments=instruments,
         notional_exposure_per_contract=notional_exposure_per_contract,
         capital=capital,
-        instrument_returns_df=instrument_returns_df)
+        instrument_returns_df=instrument_returns_df,
+        max_portfolio_leverage=max_portfolio_leverage)
 
     risk_adjusted_positions = positions
 
@@ -98,7 +102,7 @@ def get_risk_adjusted_positions(
             annualized_stddev=standard_deviation_dct[instrument],
             average_forecast=average_forecast,
             max_forecast=max_forecast,
-            max_leverage_ratio=max_leverage_ratio,
+            max_leverage_ratio=max_position_leverage_ratio,
             capital=capital,
             notional_exposure_per_contract=notional_exposure_per_contract[instrument],
             open_interest=open_interest_dct[instrument],
