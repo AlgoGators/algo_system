@@ -9,6 +9,7 @@ from get_instruments import get_instruments
 from get_optimized_positions import get_optimized_positions
 from get_risk_adjusted_positions import get_risk_adjusted_positions
 from get_buffered_positions import get_buffered_positions
+from get_notional_exposures import get_notional_exposures
 
 class TestGetInstruments(unittest.TestCase):
     def setUp(self):
@@ -95,6 +96,17 @@ class TestGetBufferedPositions(unittest.TestCase):
 
         expected_result = {'ES' : 1, 'ZF' : 1, 'ZN' : 2}
         self.assertEqual(buffered_positions, expected_result)
+
+class TestGetNotionalExposures(unittest.TestCase):
+    def test_get_notional_exposures(self):
+        prices = dict(ES=100, ZF=150, ZN=50)
+        multipliers = dict(ES=50, ZF=1000, ZN=1000)
+
+        notional_exposures = get_notional_exposures(prices, multipliers)
+
+        expected_result = dict(ES=5000, ZF=150000, ZN=50000)
+
+        self.assertEqual(notional_exposures, expected_result)
 
 if __name__ == '__main__':
     unittest.main(failfast=True)
