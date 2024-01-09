@@ -8,6 +8,7 @@ import pandas as pd
 from get_instruments import get_instruments
 from get_optimized_positions import get_optimized_positions
 from get_risk_adjusted_positions import get_risk_adjusted_positions
+from get_buffered_positions import get_buffered_positions
 
 class TestGetInstruments(unittest.TestCase):
     def setUp(self):
@@ -77,11 +78,23 @@ class TestGetRiskAdjustedPositions(unittest.TestCase):
             max_position_leverage_ratio=max_position_leverage_ratio,
             max_forecast_margin=max_forecast_margin,
             max_pct_of_open_interest=max_pct_of_open_interest,
-            instrument_returns_df=instrument_returns_df
+            instrument_returns_df=instrument_returns_df,
+            max_portfolio_leverage=20.0
         )
 
         expected_result = {'ES' : 1, 'ZF' : 1, 'ZN' : 2}
         self.assertEqual(risk_adjusted_positions, expected_result)
+
+class TestGetBufferedPositions(unittest.TestCase):
+    def test_get_buffered_positions(self):
+        positions = {'ES' : 0.9, 'ZF' : 1, 'ZN' : 2}
+        held_positions = {'ES' : 1, 'ZF' : 1, 'ZN' : 5}
+        buffer_fraction = 0.01
+
+        buffered_positions = get_buffered_positions(positions, held_positions, buffer_fraction)
+
+        expected_result = {'ES' : 1, 'ZF' : 1, 'ZN' : 2}
+        self.assertEqual(buffered_positions, expected_result)
 
 if __name__ == '__main__':
     unittest.main(failfast=True)
