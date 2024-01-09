@@ -58,7 +58,7 @@ class TestGetRiskAdjustedPositions(unittest.TestCase):
         standard_deviation_dct = {'ES' : 0.01, 'ZF' : 0.005, 'ZN' : 0.005}
         instrument_weights_dct = {'ES' : 0.33, 'ZF' : 0.33, 'ZN' : 0.33}
         max_forecast = 20
-        max_leverage_ratio = 2.0
+        max_position_leverage_ratio = 2.0
         max_forecast_margin = 0.5
         max_pct_of_open_interest = 0.01
         instrument_returns_df = self.returns_df
@@ -74,7 +74,7 @@ class TestGetRiskAdjustedPositions(unittest.TestCase):
             standard_deviation_dct=standard_deviation_dct,
             instrument_weights_dct=instrument_weights_dct,
             max_forecast=max_forecast,
-            max_leverage_ratio=max_leverage_ratio,
+            max_position_leverage_ratio=max_position_leverage_ratio,
             max_forecast_margin=max_forecast_margin,
             max_pct_of_open_interest=max_pct_of_open_interest,
             instrument_returns_df=instrument_returns_df
