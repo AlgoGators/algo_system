@@ -7,20 +7,44 @@ from get_risk_adjusted_positions import get_risk_adjusted_positions
 from get_buffered_positions import get_buffered_positions
 from get_notional_exposures import get_notional_exposures
 
-def main():
-    #!! NEED to source this
-    all_instruments = []
+def get_multipliers(path : str) -> dict:
+    contents = pd.read_csv(path, index_col=0)
 
-    instrument_returns_df = pd.DataFrame()
+    multipliers = {}
+
+    for index, row in contents.iterrows():
+        multipliers[row['Code']] = row['Point Value']
+
+    return multipliers
+
+def get_instruments(path : str):
+    contents = pd.read_csv(path, index_col=0)
+
+    return contents['Code'].tolist()
+
+def get_most_recent_prices(df : pd.DataFrame) -> dict:
+    most_recent_prices = {}
+
+    instruments = df.columns.tolist()
+    
+    for instrument in instruments:
+        most_recent_prices[instrument] = df[instrument].iloc[-1]
+
+    return most_recent_prices
+
+def main():
+    #!! NEED a source for this other than the multipliers file (ideally a file with the instruments we have data on)
+    all_instruments = get_instruments(MULTIPLIERS_PATH)
+
+    instrument_returns_df = pd.DataFrame() #? function to merge the returns for each instr. into columns
 
     instrument_weight = 1 / len(all_instruments)
 
-    #!! NEED to calculate the following:
-    multipliers = {} #? SQL pull for this
+    multipliers = get_multipliers(MULTIPLIERS_PATH)
 
     held_positions = {} #? SQL pull for this
 
-    most_recent_prices = {}
+    most_recent_prices = get_most_recent_prices(instrument_returns_df)
 
     notional_exposure_per_contract = get_notional_exposures(most_recent_prices, multipliers)
     
@@ -28,6 +52,7 @@ def main():
 
     open_interest_dct = {} #? SQL pull for this
 
+    #! NEED to figure out how we want to calculate this
     standard_deviation_dct = {} #? function for this
 
     instrument_weights_dct = {} 
