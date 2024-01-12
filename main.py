@@ -1,4 +1,5 @@
 import pandas as pd
+from math import sqrt
 from config import *
 from get_instruments import get_instruments
 from get_trend_signals import get_trend_positions
@@ -32,6 +33,17 @@ def get_most_recent_prices(df : pd.DataFrame) -> dict:
 
     return most_recent_prices
 
+#! TEMPORARY
+def get_stddev_dct(df : pd.DataFrame) -> dict:
+    instruments = df.columns.tolist()
+
+    stddev_dct = {}
+
+    for instrument in instruments:
+        stddev_dct[instrument] = df[instrument].std() * sqrt(BUSINESS_DAYS_IN_YEAR)
+
+    return stddev_dct
+
 def main():
     #!! NEED a source for this other than the multipliers file (ideally a file with the instruments we have data on)
     all_instruments = get_instruments(MULTIPLIERS_PATH)
@@ -53,7 +65,7 @@ def main():
     open_interest_dct = {} #? SQL pull for this
 
     #! NEED to figure out how we want to calculate this
-    standard_deviation_dct = {} #? function for this
+    standard_deviation_dct = get_stddev_dct(instrument_returns_df) #? function for this
 
     instrument_weights_dct = {} 
     for instrument in instruments:
@@ -72,7 +84,7 @@ def main():
         instruments=instruments,
         weights=instrument_weights_dct,
         capital=CAPITAL,
-        #!! IDM=IDM
+        #!! IDM=IDM,
         risk_target_tau=RISK_TARGET,
         multipliers=multipliers,
         fast_spans=FAST_SPANS)
