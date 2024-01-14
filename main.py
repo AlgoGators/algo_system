@@ -14,14 +14,14 @@ def get_multipliers(path : str) -> dict:
     multipliers = {}
 
     for index, row in contents.iterrows():
-        multipliers[row['Code']] = row['Point Value']
+        multipliers[row['IB Sym']] = row['Pointsize']
 
     return multipliers
 
 def get_instruments(path : str):
     contents = pd.read_csv(path, index_col=0)
 
-    return contents['Code'].tolist()
+    return contents['IB Sym'].tolist()
 
 def get_most_recent_prices(df : pd.DataFrame) -> dict:
     most_recent_prices = {}
