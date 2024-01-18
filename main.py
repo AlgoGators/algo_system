@@ -3,6 +3,7 @@ from math import sqrt
 from config import *
 from get_instruments import get_instruments
 from get_trend_signals import get_trend_positions
+from get_carry_signals import get_carry_positions
 from get_optimized_positions import get_optimized_positions
 from get_risk_adjusted_positions import get_risk_adjusted_positions
 from get_buffered_positions import get_buffered_positions
@@ -90,7 +91,14 @@ def main():
         fast_spans=FAST_SPANS)
 
     #!! NEED to calculate carry_positions: 
-    carry_positions = {}
+    carry_positions = get_carry_positions(
+        instruments=instruments,
+        weights=instrument_weights_dct,
+        capital=CAPITAL,
+        #!! IDM=IDM,
+        risk_target_tau=RISK_TARGET,
+        multipliers=multipliers,
+        carry_spans=CARRY_SPANS)
 
     total_positions = {}
 
