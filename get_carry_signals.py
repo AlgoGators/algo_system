@@ -1,8 +1,9 @@
 import pandas as pd
 from Carry import FinalCarry
 
+
 """
-2. Calculate positions as a result of trend following (Nᵀ)
+2. Calculate positions as a result of Carry (Nᵀ)
     Using the list of instruments from step 1, generate positions using multitrend.py and return a dictionary of positions using the function trend_forecast() from trend_following/multitrend.py
         Arguments:
             instr_list : list[str] e.g. ['ES', 'ZF']
@@ -29,7 +30,7 @@ def get_carry_positions(
     carry_spans : list,
     ) -> dict:
 
-    # Get positions from multitrend.py
+    # Get positions from FinalCarry.py
     positions = FinalCarry.carry_forecast(
         instr_list=instruments,
         weights=weights,
