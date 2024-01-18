@@ -40,4 +40,13 @@ The trend signal requires the following inputs:
 - capital
 - risk target
 - multipliers of instruments 
-- list of spans for the EWMA   
+- list of spans for the EWMA
+
+### Carry
+The carry signal requires the following inputs:
+- List of Instrument objects
+- dictionary of historical prices as a pandas dataframe
+- capital
+- risk target
+- multipliers of instruments 
+- list of spans for Carry   
