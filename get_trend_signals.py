@@ -1,5 +1,5 @@
 import pandas as pd
-from trend_following import multitrend
+from trend_following import trend
 
 """
 2. Calculate positions as a result of trend following (Nᵀ)
@@ -30,7 +30,7 @@ def get_trend_positions(
     ) -> dict:
 
     # Get positions from multitrend.py
-    positions = multitrend.trend_forecast(
+    positions = trend.trend_forecast(
         instr_list=instruments,
         weights=weights,
         capital=capital,
