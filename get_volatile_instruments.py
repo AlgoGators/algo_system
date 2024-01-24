@@ -1,7 +1,7 @@
 import pandas as pd
 from risk_analysis import risk_functions
 
-def get_instruments(
+def get_volatile_instruments(
     instruments : list[str],
     instrument_weight : float,
     IDM : float,
