@@ -1,7 +1,7 @@
 import pandas as pd
 import configparser
 from math import sqrt, isnan
-from get_instruments import get_volatile_instruments
+from get_volatile_instruments import get_volatile_instruments
 from get_trend_signals import get_trend_positions
 from get_carry_signals import get_carry_positions
 from get_optimized_positions import get_optimized_positions
