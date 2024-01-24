@@ -1,41 +1,120 @@
 import pandas as pd
-from math import sqrt
-from config import *
-from get_instruments import get_instruments
+import configparser
+from math import sqrt, isnan
+from get_instruments import get_volatile_instruments
 from get_trend_signals import get_trend_positions
 from get_carry_signals import get_carry_positions
 from get_optimized_positions import get_optimized_positions
 from get_risk_adjusted_positions import get_risk_adjusted_positions
 from get_buffered_positions import get_buffered_positions
 from get_notional_exposures import get_notional_exposures
+from get_held_positions import get_held_positions
 
-def get_multipliers(path : str) -> dict:
-    contents = pd.read_csv(path, index_col=0)
+def get_multipliers(path : str, symbol_column : str = 'Data Symbol', multiplier_column : str = 'Pointsize') -> dict:
+    contents = pd.read_csv(path)
 
     multipliers = {}
 
     for index, row in contents.iterrows():
-        multipliers[row['IB Sym']] = row['Pointsize']
+        symbol = row[symbol_column]
+        multiplier = row[multiplier_column]
+
+        # NaN check
+        if symbol == symbol:
+            multipliers[symbol] = multiplier
 
     return multipliers
 
-def get_instruments(path : str):
+def get_instruments(path : str, instrument_column : str= 'Data Symbol'):
     contents = pd.read_csv(path, index_col=0)
 
-    return contents['IB Sym'].tolist()
+    instruments = contents[instrument_column].tolist()
+    instruments.sort()
 
-def get_most_recent_prices(df : pd.DataFrame) -> dict:
-    most_recent_prices = {}
+    return instruments
 
-    instruments = df.columns.tolist()
+class Prices:
+    def get_historical_prices(self, instrument_name : str, price_column : str = 'Close') -> pd.DataFrame:
+        #!! this will need to be replaced with a SQL pull
+        df = pd.read_csv(f'data/{instrument_name}.csv', index_col=0)
+
+        df.rename(columns={price_column : instrument_name}, inplace=True)
+
+        return df
+
+    def get_all_historical_prices(self, instruments, price_column : str = 'Close') -> pd.DataFrame:
+        prices_df = pd.DataFrame()
+
+        for instrument in instruments:
+            prices = self.get_historical_prices(instrument, price_column)
+
+            if prices_df.empty:
+                prices_df = prices
+                continue
+
+            prices_df = prices_df.join(prices, how='inner')
+
+        return prices_df
     
-    for instrument in instruments:
-        most_recent_prices[instrument] = df[instrument].iloc[-1]
+    def get_most_recent_prices(prices_df : pd.DataFrame) -> dict:
+        most_recent_prices = {}
 
-    return most_recent_prices
+        instruments = prices_df.columns.tolist()
+
+        for instrument in instruments:
+            most_recent_prices[instrument] = prices_df[instrument].iloc[-1]
+
+        return most_recent_prices
+
+
+class ReturnMetrics:
+    def get_percent_return(self, price : float, previous_price : float) -> float:
+        """Returns the percentage return of the price compared to the previous price"""
+        if previous_price == 0:
+            return 0
+        elif previous_price < 0:
+            return (price - previous_price) / abs(previous_price)
+
+        return (price - previous_price) / previous_price
+
+    def get_instrument_returns(self, prices_df : pd.DataFrame) -> pd.DataFrame:
+        """Returns the daily percentage returns of the prices DataFrame"""
+
+        instrument_name = prices_df.columns[0]
+
+        # requires the index to be the dates
+        dates = prices_df.index.tolist()
+        prices = prices_df[instrument_name].tolist()
+
+        percent_returns = []
+
+        for i in range(1, len(prices)):
+            percent_returns.append(self.get_percent_return(prices[i], prices[i-1]))
+
+        instrument_returns_df = pd.DataFrame(percent_returns, index=dates[1:], columns=[instrument_name])
+
+        return instrument_returns_df
+
+    def get_all_instruments_returns_df(self, all_prices_df : pd.DataFrame) -> pd.DataFrame:
+        """Returns a DataFrame of the daily percentage returns of each instrument"""
+        returns_df = pd.DataFrame()
+
+        instruments = all_prices_df.columns.tolist()
+
+        for instrument in instruments:
+            instrument_returns = self.get_instrument_returns(all_prices_df.loc[:, [instrument]])
+            
+            if returns_df.empty:
+                returns_df = instrument_returns
+                continue
+
+            returns_df = returns_df.join(instrument_returns, how='inner')
+
+        return returns_df
+
 
 #! TEMPORARY
-def get_stddev_dct(df : pd.DataFrame) -> dict:
+def get_stddev_dct(df : pd.DataFrame, BUSINESS_DAYS_IN_YEAR : int) -> dict:
     instruments = df.columns.tolist()
 
     stddev_dct = {}
@@ -45,60 +124,81 @@ def get_stddev_dct(df : pd.DataFrame) -> dict:
 
     return stddev_dct
 
-def main():
-    #!! NEED a source for this other than the multipliers file (ideally a file with the instruments we have data on)
-    all_instruments = get_instruments(MULTIPLIERS_PATH)
+def parse_config(config_file : str):
+    Config = configparser.ConfigParser()
+    Config.read(config_file)
 
-    instrument_returns_df = pd.DataFrame() #? function to merge the returns for each instr. into columns
+    sections = Config.sections()
+
+    config_dict = {}
+
+    for section in sections:
+        options = Config.options(section)
+        for option in options:
+            # Try to eval if possible
+            try:
+                config_dict[option.upper()] = eval(Config.get(section, option))
+            except:
+                # String if not
+                config_dict[option.upper()] = Config.get(section, option)
+
+    return config_dict
+
+def main(config_dict : dict):
+    all_instruments = get_instruments(config_dict['INSTRUMENTS_PATH'])
+
+    historical_prices_df : pd.DataFrame = Prices().get_all_historical_prices(all_instruments)
+
+    instrument_returns_df : pd.DataFrame = ReturnMetrics().get_all_instruments_returns_df(historical_prices_df)
 
     instrument_weight = 1 / len(all_instruments)
 
-    multipliers = get_multipliers(MULTIPLIERS_PATH)
+    multipliers = get_multipliers(config_dict['MULTIPLIERS_PATH']) #? SQL pull for this
 
-    held_positions = {} #? SQL pull for this
+    held_positions = get_held_positions(config_dict['INSTRUMENTS_PATH'], 'N/A') #? SQL pull for this
 
-    most_recent_prices = get_most_recent_prices(instrument_returns_df)
+    most_recent_prices = Prices.get_most_recent_prices(historical_prices_df)
 
     notional_exposure_per_contract = get_notional_exposures(most_recent_prices, multipliers)
-    
+
     costs_per_contract = {} #? SQL pull for this
 
     open_interest_dct = {} #? SQL pull for this
 
     #! NEED to figure out how we want to calculate this
-    standard_deviation_dct = get_stddev_dct(instrument_returns_df) #? function for this
+    standard_deviation_dct = get_stddev_dct(instrument_returns_df, config_dict['BUSINESS_DAYS_IN_YEAR']) #? function for this
 
     instrument_weights_dct = {} 
-    for instrument in instruments:
+    for instrument in all_instruments:
         instrument_weights_dct[instrument] = instrument_weight
 
-    instruments = get_instruments(
+    instruments = get_volatile_instruments(
         instruments=all_instruments,
         instrument_weight=instrument_weight,
-        IDM=IDM,
-        risk_target=RISK_TARGET,
+        IDM=config_dict['IDM'],
+        risk_target=config_dict['RISK_TARGET'],
         instrument_returns_df=instrument_returns_df,
-        maximum_leverage=MAXIMUM_LEVERAGE)
-    
+        maximum_leverage=config_dict['MAX_LEVERAGE'])
+
     #? doesnt need past returns?
     trend_positions = get_trend_positions(
         instruments=instruments,
         weights=instrument_weights_dct,
-        capital=CAPITAL,
+        capital=config_dict['CAPITAL'],
         #!! IDM=IDM,
-        risk_target_tau=RISK_TARGET,
+        risk_target_tau=config_dict['RISK_TARGET'],
         multipliers=multipliers,
-        fast_spans=FAST_SPANS)
+        fast_spans=config_dict['FAST_SPANS'])
 
-    #!! NEED to calculate carry_positions: 
+
     carry_positions = get_carry_positions(
         instruments=instruments,
         weights=instrument_weights_dct,
-        capital=CAPITAL,
+        capital=config_dict['CAPITAL'],
         #!! IDM=IDM,
-        risk_target_tau=RISK_TARGET,
+        risk_target_tau=config_dict['RISK_TARGET'],
         multipliers=multipliers,
-        carry_spans=CARRY_SPANS)
+        carry_spans=config_dict['CARRY_SPANS'])
 
     total_positions = {}
 
@@ -109,39 +209,40 @@ def main():
         held_positions=held_positions,
         ideal_positions=total_positions,
         notional_exposures_per_contract=notional_exposure_per_contract,
-        capital=CAPITAL,
+        capital=config_dict['CAPITAL'],
         costs_per_contract=costs_per_contract,
         returns_df=instrument_returns_df,
-        risk_target=RISK_TARGET)
+        risk_target=config_dict['RISK_TARGET'])
     
     risk_adjusted_positions = get_risk_adjusted_positions(
         positions=optimized_positions,
         notional_exposure_per_contract=notional_exposure_per_contract,
-        capital=CAPITAL,
-        risk_target=RISK_TARGET,
-        IDM=IDM,
-        average_forecast=AVERAGE_FORECAST,
+        capital=config_dict['CAPITAL'],
+        risk_target=config_dict['RISK_TARGET'],
+        IDM=config_dict['IDM'],
+        average_forecast=config_dict['AVERAGE_FORECAST'],
         open_interest_dct=open_interest_dct,
         standard_deviation_dct=standard_deviation_dct,
         instrument_weights_dct=instrument_weights_dct,
-        max_forecast=MAX_FORECAST,
-        max_position_leverage_ratio=MAX_POSITION_LEVERAGE_RATIO,
-        max_forecast_margin=MAX_FORECAST_MARGIN,
-        max_pct_of_open_interest=MAX_PCT_OF_OPEN_INTEREST,
+        max_forecast=config_dict['MAX_FORECAST'],
+        max_position_leverage_ratio=config_dict['MAX_POSITION_LEVERAGE_RATIO'],
+        max_forecast_margin=config_dict['MAX_FORECAST_MARGIN'],
+        max_pct_of_open_interest=config_dict['MAX_PCT_OF_OPEN_INTEREST'],
         instrument_returns_df=instrument_returns_df,
-        max_portfolio_leverage=MAXIMUM_PORTFOLIO_LEVERAGE)
+        max_portfolio_leverage=config_dict['MAXIMUM_PORTFOLIO_LEVERAGE'])
     
     buffered_positions = get_buffered_positions(
         positions=risk_adjusted_positions,
         held_positions=held_positions,
-        buffer_fraction=BUFFER_FRACTION)
+        buffer_fraction=config_dict['BUFFER_FRACTION'])
     
     #? what to do with buffered positions?
     
 
 
 if __name__ == '__main__':
-    main()
+    config_dict = parse_config('config.ini')
+    main(config_dict=config_dict)
 
 """
 Proposed folder repo structure
