@@ -26,6 +26,27 @@ git submodule update --remote <moduleName>
 (and use the Desktop GUI to commit as normal)
 ```
 
+## Adding Environment Variables
+There are API keys and login credentials that for obvious reasons should be stored privately and separately of the codebase.
+
+Create a .env file with the variables you wish to define; for example:
+```
+USERNAME=JOHN.D
+PASSWORD=1234
+```
+Then to access these variables from Python:
+```
+import os
+from dotenv import load_dotenv
+from pathlib import Path
+# loads the environment variables
+load_dotenv(Path('path/to/.env'))
+# retrieves the variable
+print(os.getenv('USERNAME')) 
+```
+
+NOTE: An advantage of doing it this way, is that environment variables can be accessed by any function/file on the computer without having to reload the .env file.
+
 Incorporating the dynamic optimization with trend and carry signals to generate position sizes
 ## Design
 
