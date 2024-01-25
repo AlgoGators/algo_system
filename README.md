@@ -27,7 +27,7 @@ git submodule update --remote <moduleName>
 ```
 
 ## Adding Environment Variables
-There are API keys and login credentials that for obvious reasons should be stored privately and separate of the codebase.
+There are API keys and login credentials that for obvious reasons should be stored privately and separately of the codebase.
 
 Create a .env file with the variables you wish to define; for example:
 ```
