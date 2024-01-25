@@ -1,6 +1,8 @@
 import pandas as pd
 import configparser
-from math import sqrt, isnan
+from dotenv import load_dotenv
+from pathlib import Path
+from math import sqrt
 from get_volatile_instruments import get_volatile_instruments
 from get_trend_signals import get_trend_positions
 from get_carry_signals import get_carry_positions
@@ -9,6 +11,7 @@ from get_risk_adjusted_positions import get_risk_adjusted_positions
 from get_buffered_positions import get_buffered_positions
 from get_notional_exposures import get_notional_exposures
 from get_held_positions import get_held_positions
+from get_historical_prices import Prices
 
 def get_multipliers(path : str, symbol_column : str = 'Data Symbol', multiplier_column : str = 'Pointsize') -> dict:
     contents = pd.read_csv(path)
@@ -32,39 +35,6 @@ def get_instruments(path : str, instrument_column : str= 'Data Symbol'):
     instruments.sort()
 
     return instruments
-
-class Prices:
-    def get_historical_prices(self, instrument_name : str, price_column : str = 'Close') -> pd.DataFrame:
-        #!! this will need to be replaced with a SQL pull
-        df = pd.read_csv(f'data/{instrument_name}.csv', index_col=0)
-
-        df.rename(columns={price_column : instrument_name}, inplace=True)
-
-        return df
-
-    def get_all_historical_prices(self, instruments, price_column : str = 'Close') -> pd.DataFrame:
-        prices_df = pd.DataFrame()
-
-        for instrument in instruments:
-            prices = self.get_historical_prices(instrument, price_column)
-
-            if prices_df.empty:
-                prices_df = prices
-                continue
-
-            prices_df = prices_df.join(prices, how='inner')
-
-        return prices_df
-    
-    def get_most_recent_prices(prices_df : pd.DataFrame) -> dict:
-        most_recent_prices = {}
-
-        instruments = prices_df.columns.tolist()
-
-        for instrument in instruments:
-            most_recent_prices[instrument] = prices_df[instrument].iloc[-1]
-
-        return most_recent_prices
 
 
 class ReturnMetrics:
@@ -144,7 +114,12 @@ def parse_config(config_file : str):
 
     return config_dict
 
+def parse_environment(environment_file : str):
+    load_dotenv(Path(environment_file))
+
 def main(config_dict : dict):
+    parse_environment(config_dict['ENVIRONMENT_PATH'])
+
     all_instruments = get_instruments(config_dict['INSTRUMENTS_PATH'])
 
     historical_prices_df : pd.DataFrame = Prices().get_all_historical_prices(all_instruments)
@@ -168,7 +143,7 @@ def main(config_dict : dict):
     #! NEED to figure out how we want to calculate this
     standard_deviation_dct = get_stddev_dct(instrument_returns_df, config_dict['BUSINESS_DAYS_IN_YEAR']) #? function for this
 
-    instrument_weights_dct = {} 
+    instrument_weights_dct = {}
     for instrument in all_instruments:
         instrument_weights_dct[instrument] = instrument_weight
 
