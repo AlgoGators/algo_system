@@ -5,7 +5,7 @@ sys.path.append('../algo_system')
 
 import unittest
 import pandas as pd
-from get_instruments import get_instruments
+from get_volatile_instruments import get_instruments
 from get_optimized_positions import get_optimized_positions
 from get_risk_adjusted_positions import get_risk_adjusted_positions
 from get_buffered_positions import get_buffered_positions
