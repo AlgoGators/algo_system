@@ -1,5 +1,6 @@
 import pandas as pd
 from risk_analysis import risk_functions
+import logging
 
 def get_volatile_instruments(
     instruments : list[str],
@@ -30,7 +31,12 @@ def get_volatile_instruments(
         maximum leverage ratio of the entire position (2? 4?)
     ---
     """
-
-    acceptable_instruments = [instrument for instrument in instruments if risk_functions.Volatility().minimum_volatility(IDM, instrument_weight, risk_target, instrument_returns_df[instrument].tolist(), maximum_leverage)]
+    
+    acceptable_instruments = []
+    for instrument in instruments:
+        if risk_functions.Volatility().minimum_volatility(IDM, instrument_weight, risk_target, instrument_returns_df[instrument].tolist(), maximum_leverage):
+            acceptable_instruments.append(instrument)
+        else:
+            logging.warning(f"{instrument}, failed to meet minimum volatility requirements.")
 
     return acceptable_instruments
