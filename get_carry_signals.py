@@ -1,5 +1,5 @@
 import pandas as pd
-from Carry import FinalCarry
+from Carry import Carry
 
 
 """
@@ -30,8 +30,8 @@ def get_carry_positions(
     carry_spans : list,
     ) -> dict:
 
-    # Get positions from FinalCarry.py
-    positions = FinalCarry.carry_forecast(
+    # Get positions from Carry.py
+    positions = Carry.carry_forecast(
         instr_list=instruments,
         weights=weights,
         capital=capital,
