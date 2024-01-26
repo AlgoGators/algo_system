@@ -11,30 +11,33 @@ from get_risk_adjusted_positions import get_risk_adjusted_positions
 from get_buffered_positions import get_buffered_positions
 from get_notional_exposures import get_notional_exposures
 from get_held_positions import get_held_positions
-from get_historical_prices import Prices
+from get_historical_data import Prices, get_most_recent_open_interest
+from get_cost_estimates import get_contract_cost_estimates
 
-def get_multipliers(path : str, symbol_column : str = 'Data Symbol', multiplier_column : str = 'Pointsize') -> dict:
-    contents = pd.read_csv(path)
+class GetFromCSV:
+    def get_multipliers(path : str, symbol_column : str = 'Data Symbol', multiplier_column : str = 'Pointsize') -> dict:
+        contents = pd.read_csv(path)
 
-    multipliers = {}
+        multipliers = {}
 
-    for index, row in contents.iterrows():
-        symbol = row[symbol_column]
-        multiplier = row[multiplier_column]
+        for index, row in contents.iterrows():
+            symbol = row[symbol_column]
+            multiplier = row[multiplier_column]
 
-        # NaN check
-        if symbol == symbol:
-            multipliers[symbol] = multiplier
+            # NaN check
+            if symbol == symbol:
+                multipliers[symbol] = multiplier
 
-    return multipliers
+        return multipliers
 
-def get_instruments(path : str, instrument_column : str= 'Data Symbol'):
-    contents = pd.read_csv(path, index_col=0)
+    def get_instruments(path : str, instrument_column : str= 'Data Symbol'):
 
-    instruments = contents[instrument_column].tolist()
-    instruments.sort()
+        contents = pd.read_csv(path, index_col=0)
 
-    return instruments
+        instruments = contents[instrument_column].tolist()
+        instruments.sort()
+
+        return instruments
 
 
 class ReturnMetrics:
@@ -120,15 +123,15 @@ def parse_environment(environment_file : str):
 def main(config_dict : dict):
     parse_environment(config_dict['ENVIRONMENT_PATH'])
 
-    all_instruments = get_instruments(config_dict['INSTRUMENTS_PATH'])
+    all_instruments = GetFromCSV.get_instruments(config_dict['INSTRUMENTS_PATH'])
 
-    historical_prices_df : pd.DataFrame = Prices().get_all_historical_prices(all_instruments)
+    historical_prices_df, open_interest_df = Prices().get_all_historical_prices(all_instruments)
 
     instrument_returns_df : pd.DataFrame = ReturnMetrics().get_all_instruments_returns_df(historical_prices_df)
 
     instrument_weight = 1 / len(all_instruments)
 
-    multipliers = get_multipliers(config_dict['MULTIPLIERS_PATH']) #? SQL pull for this
+    multipliers = GetFromCSV.get_multipliers(config_dict['MULTIPLIERS_PATH']) #? SQL pull for this
 
     held_positions = get_held_positions(config_dict['INSTRUMENTS_PATH'], 'N/A') #? SQL pull for this
 
@@ -136,11 +139,11 @@ def main(config_dict : dict):
 
     notional_exposure_per_contract = get_notional_exposures(most_recent_prices, multipliers)
 
-    costs_per_contract = {} #? SQL pull for this
+    costs_per_contract = get_contract_cost_estimates(all_instruments, config_dict['CONTRACT_COSTS'])
 
-    open_interest_dct = {} #? SQL pull for this
+    open_interest_dct = get_most_recent_open_interest(open_interest_df=open_interest_df)
 
-    #! NEED to figure out how we want to calculate this
+    #! NEED to figure out how we want to calculate this LT
     standard_deviation_dct = get_stddev_dct(instrument_returns_df, config_dict['BUSINESS_DAYS_IN_YEAR']) #? function for this
 
     instrument_weights_dct = {}
