@@ -28,7 +28,9 @@ def get_carry_positions(
     risk_target_tau : float,
     multipliers : dict,
     carry_spans : list,
-    ) -> dict:
+    adjusted_prices_dict : dict,
+    carry_prices_dict : dict,
+    unadjusted_prices_dict : dict) -> dict:
 
     # Get positions from Carry.py
     positions = Carry.carry_forecast(
@@ -38,6 +40,8 @@ def get_carry_positions(
         risk_target_tau=risk_target_tau,
         multipliers=multipliers,
         carry_spans=carry_spans,
-        )
+        adjusted_prices_dict=adjusted_prices_dict,
+        current_prices_dict=unadjusted_prices_dict,
+        carry_prices_dict=carry_prices_dict)
 
     return positions[1]
