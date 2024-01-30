@@ -2,6 +2,10 @@ import pandas as pd
 from sqlalchemy import create_engine
 import urllib
 import os
+import logging
+
+# Set logging level to INFO
+logging.basicConfig(level=logging.INFO)
 
 class SQLPull:
     def get_price_data(
@@ -20,6 +24,7 @@ class SQLPull:
         # Connection string for SQL Server Authentication - do not change
         params = urllib.parse.quote_plus(fr'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
         engine = create_engine("mssql+pyodbc:///?odbc_connect=%s" % params)
+        logging.info("Connected to SQL Server.")
 
         # Retrieve a list of all table names in the database - do not change
         try:
@@ -29,6 +34,7 @@ class SQLPull:
             # Raise the error if the table isn't found; considering it returned from the function anyway.
             raise KeyError("Unable to retrieve table names from Price database.")
 
+        logging.info("Retrieved table names from SQL Server.")
 
         # Convert instrument list to name in database (e.g. 'ES' -> 'ES_Data')
         # Dictionary of dataframes
@@ -42,6 +48,8 @@ class SQLPull:
             table_query = f"SELECT * FROM [{table_name}]"
             instrument_dataframes[instrument] = pd.read_sql(table_query, engine)
 
+        logging.info("Retrieved instrument dataframes from SQL Server.")
+
         # Convert date column to datetime
         for instrument in instrument_list:
             instrument_dataframes[instrument]['Date'] = pd.to_datetime(instrument_dataframes[instrument]['Date'])
@@ -53,6 +61,7 @@ class SQLPull:
         
         # Get all adjusted close prices in each dataframe
         adjusted_prices = {}
+        logging.info("Recorded Adjusted Prices")
         for instrument in instrument_list:
             adjusted_price_df = instrument_dataframes[instrument][adj_column]
             
@@ -63,6 +72,7 @@ class SQLPull:
 
         # Get all unadjusted close prices in each dataframe
         unadj_prices = {}
+        logging.info("Recorded Unadjusted Prices")
         for instrument in instrument_list:
             unadj_price_df = instrument_dataframes[instrument][unadj_column]
 
@@ -72,6 +82,7 @@ class SQLPull:
             unadj_prices[instrument] = unadj_price_df
 
         open_interest = {}
+        logging.info("Recorded Open Interest")
         for instrument in instrument_list:
             open_interest_df = instrument_dataframes[instrument][interest_column]
 
