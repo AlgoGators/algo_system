@@ -11,11 +11,11 @@ from get_risk_adjusted_positions import get_risk_adjusted_positions
 from get_buffered_positions import get_buffered_positions
 from get_notional_exposures import get_notional_exposures
 from get_held_positions import get_held_positions
-from get_historical_data import Prices, get_most_recent_open_interest
+from get_historical_data import Prices, SQLPull, get_most_recent_open_interest
 from get_cost_estimates import get_contract_cost_estimates
 
 class GetFromCSV:
-    def get_multipliers(path : str, symbol_column : str = 'Data Symbol', multiplier_column : str = 'Pointsize') -> dict:
+    def get_multipliers(path : str, instruments : list, symbol_column : str = 'Data Symbol', multiplier_column : str = 'Pointsize') -> dict:
         contents = pd.read_csv(path)
 
         multipliers = {}
@@ -25,7 +25,7 @@ class GetFromCSV:
             multiplier = row[multiplier_column]
 
             # NaN check
-            if symbol == symbol:
+            if (symbol == symbol) and (symbol in instruments):
                 multipliers[symbol] = multiplier
 
         return multipliers
@@ -85,6 +85,28 @@ class ReturnMetrics:
 
         return returns_df
 
+def combine_dataframe_dicts(df_dict1 : dict, df_dict2 : dict) -> dict:
+    keys = [key for key in df_dict1 if key in df_dict2.keys()]
+
+    summed_df_dict = {}
+
+    for key in keys:
+        df1 : pd.DataFrame = df_dict1[key]
+        df2 : pd.DataFrame = df_dict2[key]
+
+        summed_df = df1.add(df2, fill_value=None)
+
+        summed_df_dict[key] = summed_df
+
+    return summed_df_dict
+
+def get_most_recent_positions(positions : dict) -> dict:
+    most_recent_positions = {}
+
+    for instrument in positions.keys():
+        most_recent_positions[instrument] = positions[instrument].iloc[-1]
+
+    return most_recent_positions
 
 #! TEMPORARY
 def get_stddev_dct(df : pd.DataFrame, BUSINESS_DAYS_IN_YEAR : int) -> dict:
@@ -123,19 +145,23 @@ def parse_environment(environment_file : str):
 def main(config_dict : dict):
     parse_environment(config_dict['ENVIRONMENT_PATH'])
 
-    all_instruments = GetFromCSV.get_instruments(config_dict['INSTRUMENTS_PATH'])
+    all_instruments : list = GetFromCSV.get_instruments(config_dict['INSTRUMENTS_PATH'])
 
-    historical_prices_df, open_interest_df = Prices().get_all_historical_prices(all_instruments)
+    #!! removed because extreme covariances
+    all_instruments.remove('ZL')
 
-    instrument_returns_df : pd.DataFrame = ReturnMetrics().get_all_instruments_returns_df(historical_prices_df)
+    adj_historical_prices_df, unadj_historical_prices_df, open_interest_df = Prices.get_all_historical_prices(all_instruments)
+    carry_prices = SQLPull.get_carry_data(all_instruments)
+
+    instrument_returns_df : pd.DataFrame = ReturnMetrics().get_all_instruments_returns_df(adj_historical_prices_df)
 
     instrument_weight = 1 / len(all_instruments)
 
-    multipliers = GetFromCSV.get_multipliers(config_dict['MULTIPLIERS_PATH']) #? SQL pull for this
+    multipliers = GetFromCSV.get_multipliers(config_dict['MULTIPLIERS_PATH'], all_instruments) #? SQL pull for this
 
-    held_positions = get_held_positions(config_dict['INSTRUMENTS_PATH'], 'N/A') #? SQL pull for this
+    held_positions = get_held_positions(all_instruments, 'N/A') #? SQL pull for this
 
-    most_recent_prices = Prices.get_most_recent_prices(historical_prices_df)
+    most_recent_prices = Prices.get_most_recent_prices(adj_historical_prices_df)
 
     notional_exposure_per_contract = get_notional_exposures(most_recent_prices, multipliers)
 
@@ -176,12 +202,14 @@ def main(config_dict : dict):
         #!! IDM=IDM,
         risk_target_tau=config_dict['RISK_TARGET'],
         multipliers=multipliers,
-        carry_spans=config_dict['CARRY_SPANS'])
+        carry_spans=config_dict['CARRY_SPANS'],
+        adjusted_prices_dict=adj_historical_prices_df,
+        carry_prices_dict=carry_prices,
+        unadjusted_prices_dict=unadj_historical_prices_df)
 
-    total_positions = {}
+    total_positions : dict = combine_dataframe_dicts(trend_positions, carry_positions)
 
-    for instrument in instruments:
-        total_positions[instrument] = trend_positions[instrument] + carry_positions[instrument]
+    total_positions = get_most_recent_positions(total_positions)
 
     optimized_positions = get_optimized_positions(
         held_positions=held_positions,
@@ -203,17 +231,18 @@ def main(config_dict : dict):
         standard_deviation_dct=standard_deviation_dct,
         instrument_weights_dct=instrument_weights_dct,
         max_forecast=config_dict['MAX_FORECAST'],
-        max_position_leverage_ratio=config_dict['MAX_POSITION_LEVERAGE_RATIO'],
+        max_position_leverage_ratio=config_dict['MAX_POSITION_LEVERAGE'],
         max_forecast_margin=config_dict['MAX_FORECAST_MARGIN'],
-        max_pct_of_open_interest=config_dict['MAX_PCT_OF_OPEN_INTEREST'],
+        max_pct_of_open_interest=config_dict['MAX_PERCENT_OF_OPEN_INTEREST'],
         instrument_returns_df=instrument_returns_df,
-        max_portfolio_leverage=config_dict['MAXIMUM_PORTFOLIO_LEVERAGE'])
-    
+        max_portfolio_leverage=config_dict['MAX_PORTFOLIO_LEVERAGE'])
+
     buffered_positions = get_buffered_positions(
         positions=risk_adjusted_positions,
         held_positions=held_positions,
-        buffer_fraction=config_dict['BUFFER_FRACTION'])
-    
+        buffer_fraction=config_dict['BUFFER'])
+
+    print(buffered_positions)
     #? what to do with buffered positions?
     
 
