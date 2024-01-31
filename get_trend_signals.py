@@ -22,21 +22,23 @@ from trend_following import trend
 """
 def get_trend_positions(
     instruments : list,
+    collective_adj_prices,
+    collective_unadj_prices,
     weights : dict,
     capital : int,
     risk_target_tau : float,
     multipliers : dict,
-    fast_spans : list,
-    ) -> dict:
+    fast_spans : list) -> dict:
 
     # Get positions from multitrend.py
     positions = trend.trend_forecast(
         instr_list=instruments,
+        collective_adj_prices=collective_adj_prices,
+        collective_unadj_prices=collective_unadj_prices,
         weights=weights,
         capital=capital,
         risk_target_tau=risk_target_tau,
         multipliers=multipliers,
-        fast_spans=fast_spans,
-        )
+        fast_spans=fast_spans)
 
     return positions[1]
