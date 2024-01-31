@@ -3,6 +3,7 @@ import configparser
 from dotenv import load_dotenv
 from pathlib import Path
 from math import sqrt
+import logging
 from get_volatile_instruments import get_volatile_instruments
 from get_trend_signals import get_trend_positions
 from get_carry_signals import get_carry_positions
@@ -185,8 +186,11 @@ def main(config_dict : dict):
         maximum_leverage=config_dict['MAX_LEVERAGE'])
 
     #? doesnt need past returns?
+    logging.info('Getting trend positions')
     trend_positions = get_trend_positions(
         instruments=instruments,
+        collective_adj_prices=adj_historical_prices_df,
+        collective_unadj_prices=unadj_historical_prices_df,
         weights=instrument_weights_dct,
         capital=config_dict['CAPITAL'],
         #!! IDM=IDM,
