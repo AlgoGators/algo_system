@@ -21,6 +21,7 @@ def get_portfolio_risk_multiplier(
         max_portfolio_leverage=max_portfolio_leverage)
 
 def get_risk_limited_position(
+    instrument_name : str,
     number_of_contracts : float,
     IDM : float,
     instrument_weight : float,
@@ -46,7 +47,7 @@ def get_risk_limited_position(
         Carver recommends a nominal figure of 10% or 20% when using dyn_opt
     """
 
-    return risk_functions.PositionLimits().maximum_position(
+    return risk_functions.PositionLimits(instrument_name=instrument_name).maximum_position(
         number_of_contracts=number_of_contracts,
         IDM=IDM,
         instrument_weight=instrument_weight,
@@ -95,6 +96,7 @@ def get_risk_adjusted_positions(
 
     for instrument in instruments:
         risk_adjusted_positions[instrument] = get_risk_limited_position(
+            instrument_name=instrument,
             number_of_contracts=risk_adjusted_positions[instrument],
             IDM=IDM,
             instrument_weight=instrument_weights_dct[instrument],
