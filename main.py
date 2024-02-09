@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 from math import sqrt
 import logging
+import logging.config
 from get_volatile_instruments import get_volatile_instruments
 from get_trend_signals import get_trend_positions
 from get_carry_signals import get_carry_positions
@@ -14,6 +15,11 @@ from get_notional_exposures import get_notional_exposures
 from get_held_positions import get_held_positions
 from get_historical_data import Prices, SQLPull, get_most_recent_open_interest
 from get_cost_estimates import get_contract_cost_estimates
+from logging_handler import logging_config
+
+# Starts logging configuration
+logging.config.dictConfig(logging_config)
+
 
 class GetFromCSV:
     def get_multipliers(path : str, instruments : list, symbol_column : str = 'Data Symbol', multiplier_column : str = 'Pointsize') -> dict:
@@ -151,9 +157,13 @@ def main(config_dict : dict):
     #!! removed because extreme covariances
     all_instruments.remove('ZL')
 
+    logging.info('Getting Historical Prices')
     adj_historical_prices_df, unadj_historical_prices_df, open_interest_df = Prices.get_all_historical_prices(all_instruments)
+    
+    logging.info('Getting Carry Prices')
     carry_prices = SQLPull.get_carry_data(all_instruments)
 
+    logging.info('Getting Returns')
     instrument_returns_df : pd.DataFrame = ReturnMetrics().get_all_instruments_returns_df(adj_historical_prices_df)
 
     instrument_weight = 1 / len(all_instruments)
@@ -177,6 +187,7 @@ def main(config_dict : dict):
     for instrument in all_instruments:
         instrument_weights_dct[instrument] = instrument_weight
 
+    logging.info('Getting Volatile Instruments')
     instruments = get_volatile_instruments(
         instruments=all_instruments,
         instrument_weight=instrument_weight,
@@ -198,7 +209,7 @@ def main(config_dict : dict):
         multipliers=multipliers,
         fast_spans=config_dict['FAST_SPANS'])
 
-
+    logging.info('Getting Carry Positions')
     carry_positions = get_carry_positions(
         instruments=instruments,
         weights=instrument_weights_dct,
@@ -215,6 +226,7 @@ def main(config_dict : dict):
 
     total_positions = get_most_recent_positions(total_positions)
 
+    logging.info('Optimizing Positions')
     optimized_positions = get_optimized_positions(
         held_positions=held_positions,
         ideal_positions=total_positions,
@@ -224,6 +236,8 @@ def main(config_dict : dict):
         returns_df=instrument_returns_df,
         risk_target=config_dict['RISK_TARGET'])
     
+    quit()
+    logging.info('Adjusting Positions for Risk')
     risk_adjusted_positions = get_risk_adjusted_positions(
         positions=optimized_positions,
         notional_exposure_per_contract=notional_exposure_per_contract,
@@ -241,6 +255,7 @@ def main(config_dict : dict):
         instrument_returns_df=instrument_returns_df,
         max_portfolio_leverage=config_dict['MAX_PORTFOLIO_LEVERAGE'])
 
+    logging.info('Buffering Positions')
     buffered_positions = get_buffered_positions(
         positions=risk_adjusted_positions,
         held_positions=held_positions,
