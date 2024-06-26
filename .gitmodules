@@ -10,3 +10,18 @@
 [submodule "risk_analysis"]
 	path = risk_analysis
 	url = https://github.com/AlgoGators/risk_analysis.git
+[submodule "data_engine"]
+	path = data_engine
+	url = https://github.com/AlgoGators/data_engine.git
+[submodule "risk_management"]
+	path = risk_management
+	url = https://github.com/AlgoGators/risk_management.git
+[submodule "ib-gateway"]
+	path = ib-gateway
+	url = https://github.com/AlgoGators/ib-gateway.git
+[submodule "reporting"]
+	path = reporting
+	url = https://github.com/AlgoGators/reporting.git
+[submodule "execution"]
+	path = execution
+	url = https://github.com/AlgoGators/execution.git
