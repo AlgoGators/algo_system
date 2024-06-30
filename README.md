@@ -1,5 +1,35 @@
-
 # AlgoGators System
+## Building and Launching Docker Containers
+### Environment file:
+Make sure a .env file exists in this directory with the following parameters:
+```
+IBKR_USERNAME=
+IBKR_PASSWORD=
+API_PORT=
+SOCAT_PORT=
+TRADING_MODE=
+READ_ONLY_API=
+IB_GATEWAY_VERSION=
+```
+For example:
+IBKR_USERNAME=john.doe
+IBKR_PASSWORD=password1234
+API_PORT=4002
+SOCAT_PORT=4004
+TRADING_MODE=paper
+READ_ONLY_API=no
+IB_GATEWAY_VERSION=1019
+
+See [ib-gateway](https://github.com/AlgoGators/ib-gateway) repo for more information on parameters
+
+To build and run (from parent directory):
+```
+docker-compose up -d
+```
+
+### IBC:
+
+
 ## Installation
 Begin installation of the total system by running:
 ```
